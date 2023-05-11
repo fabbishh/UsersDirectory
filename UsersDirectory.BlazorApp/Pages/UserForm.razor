@@ -1,0 +1,103 @@
+﻿@page "/users/edit/{id:int}"
+@page "/users/create"
+@using UsersDirectory.BlazorApp.Data
+@using UsersDirectory.BlazorApp.Dto
+@inject UsersService UserService
+
+<h3>@(IsEditMode ? "Редактирование пользователя" : "Добавление пользователя")</h3>
+
+@if (IsLoading)
+{
+    <p>Загрузка...</p>
+}
+else
+{
+    <EditForm Model="@UserDto" OnValidSubmit="HandleSubmitAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <div class="form-group">
+            <label>Имя:</label>
+            <InputText class="form-control" @bind-Value="@UserDto.FirstName" />
+            <ValidationMessage For="@(() => UserDto.FirstName)" />
+        </div>
+        <div class="form-group">
+            <label>Фамилия:</label>
+            <InputText class="form-control" @bind-Value="@UserDto.LastName" />
+            <ValidationMessage For="@(() => UserDto.LastName)" />
+        </div>
+        <div class="form-group">
+            <label>Отчество:</label>
+            <InputText class="form-control" @bind-Value="@UserDto.MiddleName" />
+            <ValidationMessage For="@(() => UserDto.MiddleName)" />
+        </div>
+        <div class="form-group">
+            <label>Логин Active Directory:</label>
+            <InputText class="form-control" @bind-Value="@UserDto.AdLogin" />
+            <ValidationMessage For="@(() => UserDto.AdLogin)" />
+        </div>
+        <div class="form-group">
+            <button class="btn btn-primary" type="submit">Сохранить</button>
+            <button class="btn btn-secondary" type="button" @onclick="CloseDialog">Отмена</button>
+        </div>
+    </EditForm>
+}
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    [Inject]
+    public NavigationManager NavigationManager { get; set; }
+
+    private UserDto UserDto { get; set; } = new UserDto(  );
+
+    private bool IsEditMode => Id.HasValue;
+
+    private bool IsLoading { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (IsEditMode)
+        {
+            UserDto = await UserService.GetUserAsync(Id.Value);
+        }
+    }
+
+    private async Task OnParametersSetAsync()
+    {
+        if (!IsEditMode)
+        {
+            UserDto = new UserDto();
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        IsLoading = true;
+        try
+        {
+            if (IsEditMode)
+            {
+                await UserService.UpdateUserAsync(UserDto);
+            }
+            else
+            {
+                await UserService.CreateUserAsync(UserDto);
+            }
+            NavigationManager.NavigateTo("/users");
+        }
+        catch (Exception ex)
+        {
+            // handle exception
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private void CloseDialog()
+    {
+        NavigationManager.NavigateTo("/users");
+    }
+}

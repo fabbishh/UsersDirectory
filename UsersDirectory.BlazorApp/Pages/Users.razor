@@ -1,0 +1,70 @@
+﻿@page "/"
+@page "/users"
+@using UsersDirectory.BlazorApp.Data
+@using UsersDirectory.BlazorApp.Dto
+@inject UsersService UsersService
+@inject NavigationManager NavigationManager
+
+<h1>Users</h1>
+
+@if (UserList == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div class="form-group">
+        <button class="btn btn-primary" @onclick="() => AddUser()">Добавить пользователя</button>
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>FirstName</th>
+                <th>LastName</th>
+                <th>MiddleName</th>
+                <th>ActiveDirectory Login</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in UserList)
+            {
+                <tr>
+                    <td>@user.FirstName</td>
+                    <td>@user.LastName</td>
+                    <td>@user.MiddleName</td>
+                    <td>@user.AdLogin</td>
+                    <td>
+                        <button class="btn btn-primary" @onclick="() => EditUser(user)">Edit</button>
+                        <button class="btn btn-danger" @onclick="() => DeleteUser(user.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private IEnumerable<UserDto> UserList;
+
+    protected override async Task OnInitializedAsync()
+    {
+        UserList = await UsersService.GetUsersAsync();
+    }
+
+    private void AddUser() 
+    {
+        NavigationManager.NavigateTo("/users/create");
+    }
+
+    private void EditUser(UserDto user)
+    {
+        NavigationManager.NavigateTo($"/users/edit/{user.Id}");
+    }
+
+    private async Task DeleteUser(int id)
+    {
+        await UsersService.DeleteUserAsync(id);
+        UserList = await UsersService.GetUsersAsync();
+    }
+}
